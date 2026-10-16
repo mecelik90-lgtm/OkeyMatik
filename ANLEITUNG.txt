@@ -1,0 +1,11 @@
+OkeyMatik als App (PWA)
+
+Inhalt: index.html, manifest.webmanifest, sw.js, Ordner icons/
+Diesen ganzen Ordner auf einen Webspace mit HTTPS hochladen (z. B. GitHub Pages oder Netlify).
+
+Installieren:
+- iPhone: Seite in Safari öffnen > Teilen > "Zum Home-Bildschirm".
+- Android: Seite in Chrome öffnen > Menü (drei Punkte) > "App installieren" bzw. "Zum Startbildschirm hinzufügen".
+
+Updates: In sw.js die Versionsnummer erhöhen (okey-punkte-v4 -> v5) und die Dateien neu hochladen.
+Hinweis: Punkte werden pro Gerät gespeichert, nicht zwischen Geräten geteilt.

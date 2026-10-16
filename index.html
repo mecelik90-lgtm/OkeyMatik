@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>OkeyMatik</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#15402f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="OkeyMatik">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--felt:#15402f;--felt2:#1b4c39;--felt-line:#2e6a54;--tile:#f4eddb;--tile-edge:#cbbd96;--gold:#f6e3a1;--gold-edge:#d3b045;--ink:#1c1b18;--soft:#a9c7b8;--tile-mute:#756d58;
+--c0:#1c1b18;--c1:#1f55b5;--c2:#c8312b;--c3:#e2a418;--c4:#8e4bb8;
+--n0:#1c1b18;--n1:#1f55b5;--n2:#c8312b;--n3:#a56a00;--n4:#8e4bb8;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--felt);color:var(--tile);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;padding:14px 12px 40px;max-width:640px;margin-inline:auto}
+h1{font-size:1.65rem;font-weight:800;letter-spacing:-.01em;margin:4px 4px 12px}
+.bar{display:flex;margin:0 0 12px}
+.seg{display:flex;width:100%;border:1px solid var(--felt-line);border-radius:12px;padding:3px;background:rgba(0,0,0,.22);gap:3px}
+.seg button{flex:1;border:0;border-radius:9px;background:none;color:var(--soft);font:inherit;font-weight:500;padding:10px 6px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--tile);color:var(--ink);font-weight:700}
+.grid{display:grid;grid-template-columns:44px repeat(4,minmax(0,1fr));gap:6px;align-items:center}
+.board{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--felt);padding:6px 0 14px;margin-bottom:6px;box-shadow:0 12px 12px -10px rgba(0,0,0,.5)}
+.names input{width:100%;font:inherit;font-weight:700;font-size:.95rem;text-align:center;border:0;border-top:6px solid var(--cc);border-bottom:1px solid var(--tile-edge);background:var(--tile);color:var(--ink);padding:8px 2px 7px;border-radius:12px 12px 0 0;transition:background .2s}
+.tot .cell{background:var(--tile);color:var(--cn);border-radius:0 0 12px 12px;text-align:center;padding:6px 2px 7px;font-size:clamp(1rem,4.9vw,1.7rem);overflow:hidden;font-weight:800;line-height:1.1;font-variant-numeric:tabular-nums;box-shadow:0 5px 0 var(--tile-edge);transition:background .2s}
+.names input.lead,.tot .cell.lead{background:var(--gold)}
+.tot .cell.lead{box-shadow:0 5px 0 var(--gold-edge)}
+.names input.most:not(.lead),.tot .cell.most:not(.lead){background:#f7d9d2}
+.tot .cell.most{color:#b3261e}
+.tot .cell.most:not(.lead){box-shadow:0 5px 0 #d9a79d}
+.tot .cell.most small{color:#8f4a42}
+.tot small{display:block;font-size:.7rem;font-weight:500;color:var(--tile-mute)}
+.row{background:var(--felt2);border:1px solid var(--felt-line);border-radius:14px;padding:8px;margin-bottom:10px;row-gap:7px}
+.rn{text-align:center;font-weight:800;font-size:1.25rem;line-height:1;color:var(--tile)}
+.rn small{display:block;font-size:.65rem;font-weight:500;color:var(--soft);margin-bottom:2px}
+.row input{width:100%;font:inherit;font-size:1.2rem;font-weight:700;text-align:center;border:0;border-bottom:3px solid var(--tile-edge);border-radius:10px;background:var(--tile);color:var(--ink);padding:10px 2px 8px;-moz-appearance:textfield}
+.row input::-webkit-outer-spin-button,.row input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.mb{font:inherit;font-weight:700;font-size:.8rem;border:1px solid var(--felt-line);border-radius:999px;background:transparent;color:var(--soft);padding:7px 0;cursor:pointer;min-width:0}
+.mb[data-m="2"]{background:var(--c3);color:var(--ink);border-color:var(--c3)}
+.mb[data-m="4"]{background:#3a78e0;color:#fff;border-color:#3a78e0}
+.mb[data-m="8"]{background:#d9453d;color:#fff;border-color:#d9453d}
+.chips{grid-column:1/-1;display:flex;gap:5px}
+.chip{flex:1;min-width:0;font:inherit;font-size:.7rem;font-weight:500;padding:9px 0;border:1px solid var(--felt-line);border-radius:9px;background:transparent;color:var(--soft);cursor:pointer;white-space:nowrap}
+.chip::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--cc);margin-right:4px;box-shadow:0 0 0 1px var(--tile)}
+.chip[aria-pressed=true]{background:var(--cc);color:var(--ct);border-color:var(--tile);font-weight:700}
+.chip[aria-pressed=true]::before{background:var(--ct);box-shadow:none}
+input:focus-visible,button:focus-visible{outline:3px solid var(--gold-edge);outline-offset:2px}
+.act{display:flex;gap:8px;margin-top:16px}
+.act button{flex:1;font:inherit;font-weight:700;font-size:.9rem;padding:14px 6px;border-radius:12px;border:1px solid var(--felt-line);background:transparent;color:var(--tile);cursor:pointer}
+.act .main{flex:1.7;background:var(--tile);color:var(--ink);border-color:var(--tile);box-shadow:0 4px 0 var(--tile-edge)}
+.act .warn.armed{background:#d9453d;color:#fff;border-color:#d9453d}
+.hint{color:var(--soft);font-size:.85rem;margin:16px 4px 0}
+.cf{margin:0 0 12px;background:var(--felt2);border:1px solid var(--felt-line);border-radius:12px;padding:10px 12px}
+.cf summary{cursor:pointer;font-weight:700}
+.cfg{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:10px}
+.cfg label{display:block;font-size:.7rem;color:var(--soft);text-align:center}
+.cfg label::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--cc);margin-right:3px;box-shadow:0 0 0 1px var(--tile)}
+.cfg input{width:100%;margin-top:4px;font:inherit;font-weight:700;text-align:center;border:0;border-bottom:3px solid var(--tile-edge);border-radius:8px;background:var(--tile);color:var(--ink);padding:8px 0}
+.cf p{margin:10px 0 0;font-size:.8rem;color:var(--soft)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<h1>OkeyMatik</h1>
+<div class="bar"><div class="seg" role="group" aria-label="Wertung">
+<button id="m-low" aria-pressed="true">Wenigste Punkte gewinnt</button>
+<button id="m-high" aria-pressed="false">Meiste Punkte gewinnt</button></div></div>
+<details class="cf"><summary>Farbfaktoren</summary><div class="cfg" id="cfg"></div><p>Trage die Punkte auf dem Brett ein. Sie werden mit dem Faktor der Farbe multipliziert, mit der aufgemacht wurde (ohne gewählte Farbe ×1). Der Faktor gilt zusätzlich zum ×1/×2/×4/×8 des jeweiligen Spielers in dieser Runde.</p></details>
+<div class="board">
+<div class="grid names" id="names"><span></span></div>
+<div class="grid tot" id="tot"><span></span></div>
+</div>
+<div id="rows"></div>
+<div class="act">
+<button class="main" id="add">Runde hinzufügen</button>
+<button id="del">Letzte löschen</button>
+<button class="warn" id="reset">Zurücksetzen</button>
+</div>
+<p class="hint">Tipp: Beim klassischen Okey 101 bekommen Verlierer Minuspunkte für ihre Reststeine, wer abschließt eine negative Zahl (z. B. −101). Dann gewinnt die niedrigste Summe.</p>
+<script>
+var KEY="okey-punkte-v1",cols=["--c0","--c1","--c2","--c3","--c4"],CN=["Schwarz","Rot","Gelb","Blau","Blume"],CO=[0,2,3,1,4],CT=["#f4eddb","#fff","#1c1b18","#fff","#fff"];
+var S={names:["Spieler 1","Spieler 2","Spieler 3","Spieler 4"],rounds:fresh(),mult:[],col:[],cf:[5,5,10,10,20],cfv:1,low:true};
+try{var raw=localStorage.getItem(KEY);if(raw){var p=JSON.parse(raw);if(p&&p.names&&p.rounds)S=p}}catch(e){}
+function fresh(){var a=[];for(var i=0;i<11;i++)a.push(["","","",""]);return a}
+if(!S.mult)S.mult=[];S.mult=S.mult.map(function(m){return Array.isArray(m)?m:(m==null?null:[m,m,m,m])});function mu(ri,i){var a=S.mult[ri];return a&&a[i]?a[i]:1}if(!S.col)S.col=[];if(!S.cf||!S.cfv){S.cf=[5,5,10,10,20];S.cfv=1}while(S.rounds.length<11)S.rounds.push(["","","",""]);
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function cf(ri){var c=S.col[ri];if(c==null||c<0)return 1;var f=parseFloat(S.cf[c]);return isNaN(f)?1:f}
+function cfg(){var h="";CN.forEach(function(n,k){h+='<div><label style="--cc:var('+cols[CO[k]]+')">'+n+'<input type="number" step="any" data-k="'+k+'" value="'+S.cf[k]+'"></label></div>'});var el=document.getElementById("cfg");el.innerHTML=h;el.querySelectorAll("input").forEach(function(i){i.oninput=function(){S.cf[+i.dataset.k]=i.value;save();totals()}})}
+function sums(){return [0,1,2,3].map(function(i){return S.rounds.reduce(function(a,r,ri){var v=parseFloat(r[i]);return a+(isNaN(v)?0:v)*mu(ri,i)*cf(ri)},0)})}
+function totals(){
+  var s=sums(),any=S.rounds.some(function(r){return r.some(function(v){return v!==""})});
+  var best=S.low?Math.min.apply(null,s):Math.max.apply(null,s),mx=Math.max.apply(null,s),mn=Math.min.apply(null,s);
+  var h="<span></span>";
+  s.forEach(function(v,i){var ld=any&&v===best,ms=any&&mx>mn&&v===mx;h+='<div class="cell'+(ld?' lead':'')+(ms?' most':'')+'" style="--cn:var(--n'+i+')">'+v+'<small>'+(ld?'vorne':'Summe')+'</small></div>'});
+  document.getElementById("tot").innerHTML=h;
+  document.querySelectorAll("#names input").forEach(function(n,i){n.classList.toggle("lead",any&&s[i]===best);n.classList.toggle("most",any&&mx>mn&&s[i]===mx)});
+}
+function names(){
+  var h="<span></span>";
+  S.names.forEach(function(n,i){h+='<input aria-label="Name Spieler '+(i+1)+'" style="--cc:var('+cols[i]+')" value="'+n.replace(/"/g,"&quot;")+'" data-n="'+i+'">'});
+  var el=document.getElementById("names");el.innerHTML=h;
+  el.querySelectorAll("input").forEach(function(inp){inp.oninput=function(){S.names[+inp.dataset.n]=inp.value;save()};inp.onfocus=function(){inp.select()}});
+}
+function rows(){
+  var h="";
+  S.rounds.forEach(function(r,ri){
+    h+='<div class="grid row"><div class="rn"><small>Runde</small>'+(ri+1)+'</div>';
+    r.forEach(function(v,i){h+='<input type="number" step="any" aria-label="Runde '+(ri+1)+', '+S.names[i].replace(/"/g,"")+'" value="'+v+'" data-r="'+ri+'" data-c="'+i+'">'});
+    h+='<span></span>';r.forEach(function(v,i){var m=mu(ri,i);h+='<button class="mb" data-m="'+m+'" data-r="'+ri+'" data-c="'+i+'" aria-label="Runde '+(ri+1)+', '+S.names[i].replace(/"/g,"")+', Faktor '+m+'. Tippen zum Ändern">×'+m+'</button>'});h+='<div class="chips" role="group" aria-label="Aufgemacht mit, Runde '+(ri+1)+'">';
+    CN.forEach(function(n,k){h+='<button class="chip" data-k="'+ri+'" data-c="'+k+'" aria-pressed="'+(S.col[ri]===k)+'" style="--cc:var('+cols[CO[k]]+');--ct:'+CT[k]+'">'+n+'</button>'});
+    h+='</div></div>';
+  });
+  var el=document.getElementById("rows");el.innerHTML=h;
+  el.querySelectorAll("input").forEach(function(inp){inp.oninput=function(){S.rounds[+inp.dataset.r][+inp.dataset.c]=inp.value;save();totals()}});
+  el.querySelectorAll(".mb").forEach(function(b){b.onclick=function(){var r=+b.dataset.r,c=+b.dataset.c,m=mu(r,c);m=m>=8?1:m*2;if(!S.mult[r])S.mult[r]=[1,1,1,1];S.mult[r][c]=m;save();b.dataset.m=m;b.textContent="×"+m;b.setAttribute("aria-label","Runde "+(r+1)+", "+S.names[c].replace(/"/g,"")+", Faktor "+m+". Tippen zum Ändern");totals()}});
+  el.querySelectorAll(".chip").forEach(function(b){b.onclick=function(){var k=+b.dataset.k,c=+b.dataset.c;S.col[k]=S.col[k]===c?-1:c;save();totals();b.parentNode.querySelectorAll(".chip").forEach(function(x){x.setAttribute("aria-pressed",S.col[k]===+x.dataset.c)})}});
+}
+function mode(){
+  document.getElementById("m-low").setAttribute("aria-pressed",S.low);
+  document.getElementById("m-high").setAttribute("aria-pressed",!S.low);
+  totals();
+}
+document.getElementById("m-low").onclick=function(){S.low=true;save();mode()};
+document.getElementById("m-high").onclick=function(){S.low=false;save();mode()};
+document.getElementById("add").onclick=function(){S.rounds.push(["","","",""]);save();rows();totals();var l=document.querySelectorAll("#rows .row");var f=l[l.length-1].querySelector("input");f.focus();f.scrollIntoView({block:"center"})};
+document.getElementById("del").onclick=function(){if(S.rounds.length>1){S.rounds.pop();S.mult.length=Math.min(S.mult.length,S.rounds.length);S.col.length=Math.min(S.col.length,S.rounds.length);save();rows();totals()}};
+var rb=document.getElementById("reset"),t;
+rb.onclick=function(){
+  if(!rb.classList.contains("armed")){rb.classList.add("armed");rb.textContent="Wirklich?";t=setTimeout(function(){rb.classList.remove("armed");rb.textContent="Zurücksetzen"},3000);return}
+  clearTimeout(t);rb.classList.remove("armed");rb.textContent="Zurücksetzen";
+  S.rounds=fresh();S.mult=[];S.col=[];save();rows();totals();
+};
+names();rows();mode();cfg();
+if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}
+</script>
+</body>
+</html>
