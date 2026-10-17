@@ -86,8 +86,19 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--gold-edge);outl
 .ttot .cell{font-size:clamp(1.4rem,7vw,2.1rem)}
 .board.team .names{margin-top:12px}
 .board.team .names input{font-size:.75rem;border-top-width:4px;border-bottom:0;border-radius:9px;padding:6px 2px}
-#rows.team .row input:nth-of-type(-n+2){border-bottom-color:#3a78e0}
-#rows.team .row input:nth-of-type(n+3){border-bottom-color:var(--c3)}
+#rows .row input:nth-of-type(1){border-bottom-color:var(--p0)}
+#rows .row input:nth-of-type(2){border-bottom-color:var(--p1)}
+#rows .row input:nth-of-type(3){border-bottom-color:var(--p2)}
+#rows .row input:nth-of-type(4){border-bottom-color:var(--p3)}
+:root{--p0:#1c1b18;--p1:#1f55b5;--p2:#c8312b;--p3:#e2a418;--q0:#1c1b18;--q1:#1f55b5;--q2:#c8312b;--q3:#a56a00;--t0:#1f55b5;--t1:#e2a418;--u0:#1f55b5;--u1:#a56a00}
+.set{margin-left:auto;font:inherit;font-weight:700;font-size:.85rem;border:1px solid var(--felt-line);background:transparent;color:var(--tile);border-radius:12px;padding:10px 12px;cursor:pointer}
+.mset{display:block;width:100%;margin:22px 0 0;padding:14px;font-size:.95rem}
+.sh{font-size:1.05rem;font-weight:700;margin:22px 4px 2px}
+.crow{background:var(--felt2);border:1px solid var(--felt-line);border-radius:14px;padding:10px 12px;margin-top:10px}
+.cl{font-weight:700;font-size:.9rem;margin-bottom:8px}
+.sw{display:flex;gap:6px}
+.swb{flex:1;min-width:0;aspect-ratio:1;max-width:44px;border-radius:50%;border:0;padding:0;background:var(--sc);cursor:pointer;box-shadow:0 0 0 1px var(--felt-line)}
+.swb[aria-pressed=true]{outline:3px solid var(--tile);outline-offset:2px}
 </style>
 </head>
 <body>
@@ -98,10 +109,11 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--gold-edge);outl
 <button class="mt k" data-v="klassisch"><span class="big">Klassisch</span><small>allein oder mit Partner</small><span class="ring"></span></button>
 <button class="mt h" data-v="101"><span class="big">101</span><small>allein oder mit Partner</small><span class="ring"></span></button>
 </div>
+<button class="set mset" id="g-menu">Einstellungen</button>
 </div>
 
 <div id="game" hidden>
-<div class="top"><button class="back" id="back" aria-label="Zurück zum Menü">‹ Menü</button><h1 id="gtitle">101</h1></div>
+<div class="top"><button class="back" id="back" aria-label="Zurück zum Menü">‹ Menü</button><h1 id="gtitle">101</h1><button class="set" id="g-game">Einstellungen</button></div>
 <div class="bar"><div class="seg" role="group" aria-label="Spielweise">
 <button id="t-solo" aria-pressed="true">Jeder für sich</button>
 <button id="t-team" aria-pressed="false">Mit Partner</button></div></div>
@@ -121,6 +133,17 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--gold-edge);outl
 <button id="del">Letzte löschen</button>
 <button class="warn" id="reset">Zurücksetzen</button>
 </div>
+</div>
+
+<div id="settings" hidden>
+<div class="top"><button class="back" id="s-back">‹ Zurück</button><h1>Einstellungen</h1></div>
+<h2 class="sh">Spielerfarben</h2>
+<p class="hint" style="margin-top:0">Gilt für alle Spielarten, auch mit Partner.</p>
+<div id="pc"></div>
+<h2 class="sh">Teamfarben</h2>
+<p class="hint" style="margin-top:0">Für die beiden Team-Steine bei „Mit Partner“.</p>
+<div id="tc"></div>
+<div class="act"><button id="s-reset">Standardfarben</button></div>
 </div>
 
 <script>
@@ -153,26 +176,26 @@ function totals(){
   var ni=document.querySelectorAll("#names input"),ti=document.querySelectorAll("#tn input"),h="<span></span>",f;
   if(S.team){
     var t=[s[0]+s[1],s[2]+s[3]];f=fl(t);
-    t.forEach(function(v,i){h+='<div class="cell'+(f[i].ld?' lead':'')+(f[i].ms?' most':'')+'" style="--cn:var(--n'+(i?3:1)+')">'+v+'<small>'+(f[i].ld?'vorne':'Summe')+'</small></div>'});
+    t.forEach(function(v,i){h+='<div class="cell'+(f[i].ld?' lead':'')+(f[i].ms?' most':'')+'" style="--cn:var(--u'+i+')">'+v+'<small>'+(f[i].ld?'vorne':'Summe')+'</small></div>'});
     $("ttot").innerHTML=h;
     ti.forEach(function(n,i){n.classList.toggle("lead",f[i].ld);n.classList.toggle("most",f[i].ms)});
     ni.forEach(function(n){n.classList.remove("lead");n.classList.remove("most")});
   }else{
     f=fl(s);
-    s.forEach(function(v,i){h+='<div class="cell'+(f[i].ld?' lead':'')+(f[i].ms?' most':'')+'" style="--cn:var(--n'+i+')">'+v+'<small>'+(f[i].ld?'vorne':'Summe')+'</small></div>'});
+    s.forEach(function(v,i){h+='<div class="cell'+(f[i].ld?' lead':'')+(f[i].ms?' most':'')+'" style="--cn:var(--q'+i+')">'+v+'<small>'+(f[i].ld?'vorne':'Summe')+'</small></div>'});
     $("tot").innerHTML=h;
     ni.forEach(function(n,i){n.classList.toggle("lead",f[i].ld);n.classList.toggle("most",f[i].ms)});
   }
 }
 function tnames(){
   var h="<span></span>";
-  S.tn.forEach(function(n,i){h+='<input aria-label="Teamname '+(i+1)+'" style="--cc:var('+cols[i?3:1]+')" value="'+String(n).replace(/"/g,"&quot;")+'" data-n="'+i+'">'});
+  S.tn.forEach(function(n,i){h+='<input aria-label="Teamname '+(i+1)+'" style="--cc:var(--t'+i+')" value="'+String(n).replace(/"/g,"&quot;")+'" data-n="'+i+'">'});
   var el=$("tn");el.innerHTML=h;
   el.querySelectorAll("input").forEach(function(inp){inp.oninput=function(){S.tn[+inp.dataset.n]=inp.value;save()};inp.onfocus=function(){inp.select()}});
 }
 function names(){
   var h="<span></span>";
-  S.names.forEach(function(n,i){var cc=S.team?cols[i<2?1:3]:cols[i];h+='<input aria-label="Name Spieler '+(i+1)+'" style="--cc:var('+cc+')" value="'+n.replace(/"/g,"&quot;")+'" data-n="'+i+'">'});
+  S.names.forEach(function(n,i){var cc="--p"+i;h+='<input aria-label="Name Spieler '+(i+1)+'" style="--cc:var('+cc+')" value="'+n.replace(/"/g,"&quot;")+'" data-n="'+i+'">'});
   var el=$("names");el.innerHTML=h;
   el.querySelectorAll("input").forEach(function(inp){inp.oninput=function(){S.names[+inp.dataset.n]=inp.value;save()};inp.onfocus=function(){inp.select()}});
 }
@@ -205,12 +228,11 @@ function teamUI(){
 function enter(v){
   V=v;KEY=KEYS[v];S=load(v);
   $("gtitle").textContent=TITLES[v];
-  $("menu").hidden=true;$("game").hidden=false;
+  show("game");
   tnames();rows();cfg();mode();teamUI();
-  window.scrollTo(0,0);
   try{if(location.hash!=="#"+v)location.hash=v}catch(e){}
 }
-function leave(){V=null;$("game").hidden=true;$("menu").hidden=false;window.scrollTo(0,0)}
+function leave(){V=null;show("menu")}
 function route(){var h=(location.hash||"").slice(1);if(KEYS.hasOwnProperty(h)){if(h!==V)enter(h)}else if(V)leave()}
 document.querySelectorAll(".mt").forEach(function(b){b.onclick=function(){enter(b.dataset.v)}});
 $("back").onclick=function(){try{if(location.hash)location.hash=""}catch(e){}if(V)leave()};
@@ -226,6 +248,24 @@ rb.onclick=function(){
   clearTimeout(t);rb.classList.remove("armed");rb.textContent="Zurücksetzen";
   S.rounds=fresh();S.mult=[];S.col=[];save();rows();totals();
 };
+function show(w){$("menu").hidden=w!=="menu";$("game").hidden=w!=="game";$("settings").hidden=w!=="settings";window.scrollTo(0,0)}
+var PAL=[{n:"Schwarz",f:"#1c1b18",u:"#1c1b18"},{n:"Blau",f:"#1f55b5",u:"#1f55b5"},{n:"Rot",f:"#c8312b",u:"#c8312b"},{n:"Gelb",f:"#e2a418",u:"#a56a00"},{n:"Lila",f:"#8e4bb8",u:"#8e4bb8"},{n:"Orange",f:"#e8742a",u:"#b4501a"},{n:"Türkis",f:"#1a9aa6",u:"#0e707a"},{n:"Rosa",f:"#d9558f",u:"#b23a70"}];
+var SKEY="okey-settings-v1",ST={pc:[0,1,2,3],tc:[1,3]},back="menu";
+function okIdx(x){return typeof x==="number"&&x>=0&&x<PAL.length&&x%1===0}
+function loadST(){try{var r=JSON.parse(localStorage.getItem(SKEY));if(r&&r.pc&&r.tc&&r.pc.length===4&&r.tc.length===2&&r.pc.every(okIdx)&&r.tc.every(okIdx))ST={pc:r.pc,tc:r.tc}}catch(e){}}
+function saveST(){try{localStorage.setItem(SKEY,JSON.stringify(ST))}catch(e){}}
+function applyColors(){var st=document.documentElement.style;ST.pc.forEach(function(k,i){st.setProperty("--p"+i,PAL[k].f);st.setProperty("--q"+i,PAL[k].u)});ST.tc.forEach(function(k,i){st.setProperty("--t"+i,PAL[k].f);st.setProperty("--u"+i,PAL[k].u)})}
+function swRow(label,t,i){return '<div class="crow"><div class="cl">'+label+'</div><div class="sw" role="group" aria-label="Farbe '+label+'">'+PAL.map(function(p,k){return '<button class="swb" style="--sc:'+p.f+'" aria-label="'+p.n+'" aria-pressed="'+((t==="p"?ST.pc:ST.tc)[i]===k)+'" data-t="'+t+'" data-i="'+i+'" data-k="'+k+'"></button>'}).join("")+'</div></div>'}
+function renderSettings(){
+  var h="";for(var i=0;i<4;i++)h+=swRow("Spieler "+(i+1),"p",i);$("pc").innerHTML=h;
+  h="";for(var j=0;j<2;j++)h+=swRow("Team "+(j?"B":"A"),"t",j);$("tc").innerHTML=h;
+  document.querySelectorAll(".swb").forEach(function(b){b.onclick=function(){(b.dataset.t==="p"?ST.pc:ST.tc)[+b.dataset.i]=+b.dataset.k;saveST();applyColors();b.parentNode.querySelectorAll(".swb").forEach(function(x){x.setAttribute("aria-pressed",x===b)})}});
+}
+function openSettings(){back=V?"game":"menu";renderSettings();show("settings")}
+$("g-menu").onclick=openSettings;$("g-game").onclick=openSettings;
+$("s-back").onclick=function(){show(back==="game"&&V?"game":"menu")};
+$("s-reset").onclick=function(){ST={pc:[0,1,2,3],tc:[1,3]};saveST();applyColors();renderSettings()};
+loadST();applyColors();
 window.addEventListener("hashchange",route);route();
 if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}
 </script>
