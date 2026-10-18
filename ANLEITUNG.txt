@@ -7,5 +7,5 @@ Installieren:
 - iPhone: Seite in Safari öffnen > Teilen > "Zum Home-Bildschirm".
 - Android: Seite in Chrome öffnen > Menü (drei Punkte) > "App installieren" bzw. "Zum Startbildschirm hinzufügen".
 
-Updates: In sw.js die Versionsnummer erhöhen (okey-punkte-v8 -> v9) und die Dateien neu hochladen.
+Updates: In sw.js die Versionsnummer erhöhen (okey-punkte-v11 -> v12) und die Dateien neu hochladen.
 Hinweis: Punkte werden pro Gerät gespeichert, nicht zwischen Geräten geteilt.
