@@ -191,6 +191,16 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--gold-edge);outl
 .mt.h small,.mt.p small{font-size:.72rem}
 .mt.h .ring,.mt.p .ring{width:18px;height:18px;border-width:3px}
 .numin{width:100%;max-width:140px;display:block;font:inherit;font-weight:700;font-size:1.1rem;text-align:center;border:0;border-bottom:3px solid var(--tile-edge);border-radius:10px;background:var(--tile);color:var(--ink);padding:10px 2px}
+#pdboard.team .names input{border-radius:9px;box-shadow:0 3px 0 var(--tile-edge)}
+.pdg.w4 .ci{padding:7px 1px;font-size:.68rem;overflow:hidden;text-overflow:ellipsis}
+.pdg.w4 .ci::before{width:8px;height:8px;margin-right:3px}
+.pdg.w4 .pk{border-top:3px solid var(--cc);font-size:.72rem;padding:7px 2px}
+.pdg.w4 .pk::before{display:none}
+#pdgame .top{gap:8px}
+#pdgame .top h1{font-size:1.2rem;white-space:nowrap}
+#pdgame .set{padding:10px 9px;font-size:.78rem;white-space:nowrap}
+.pdn{white-space:nowrap}
+#pdgame .back{padding:10px 12px;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -233,8 +243,13 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--gold-edge);outl
 
 <div id="pdgame" hidden>
 <div class="top"><button class="back" id="pd-back">‹ Menü</button><h1>Puan düşme</h1><button class="set" id="g-pd">Einstellungen</button></div>
-<details class="cf" style="margin-bottom:12px"><summary>Regeln</summary><p>Alle starten mit <b id="pd-rule">20</b> Punkten. Wer schließt, zieht allen anderen Punkte ab: Normal 2, Okey 4, Çift 8, Çift + Okey 12, Dizi 16, Dizi + Okey 20. Schließt niemand und die Steine sind alle, verlieren alle 1 Punkt. Sobald ein Spieler 0 erreicht, ist das Spiel zu Ende.</p></details>
-<div class="board">
+<div class="bar"><div class="seg" role="group" aria-label="Spielweise">
+<button id="pd-solo" aria-pressed="true">Jeder für sich</button>
+<button id="pd-team" aria-pressed="false">Mit Partner</button></div></div>
+<details class="cf" style="margin-bottom:12px"><summary>Regeln</summary><p>Alle starten mit <b id="pd-rule">20</b> Punkten. Wer schließt, zieht allen anderen Punkte ab: Normal 2, Okey 4, Çift 8, Çift + Okey 12, Dizi 16, Dizi + Okey 20. Schließt niemand und die Steine sind alle, verlieren alle 1 Punkt. Zeigt ein Spieler in einer Runde den Gösterge-Stein, verlieren alle anderen 1 Punkt. Mit Partner zählt ihr als zwei Teams (Spieler 1 + 2 gegen Spieler 3 + 4): Abzüge treffen nur das gegnerische Team. Sobald ein Spieler oder Team 0 erreicht, ist das Spiel zu Ende.</p></details>
+<div class="board" id="pdboard">
+<div class="grid tn" id="pdtn" hidden><span></span></div>
+<div class="grid ttot" id="pdttot" hidden><span></span></div>
 <div class="grid names" id="pdnames"><span></span></div>
 <div class="grid tot" id="pdtot"><span></span></div>
 <div class="notes" id="pdnotes" hidden></div>
@@ -260,7 +275,7 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--gold-edge);outl
 <div class="crow"><div class="cfg" id="cfg2" style="margin-top:0"></div></div>
 <div class="act" style="margin-top:8px"><button id="cf-reset">Standardwerte</button></div>
 <h2 class="sh">Puan düşme</h2>
-<p class="hint" style="margin-top:0">Mit wie vielen Punkten jeder Spieler startet. Das Spiel endet, sobald einer 0 erreicht.</p>
+<p class="hint" style="margin-top:0">Mit wie vielen Punkten jeder Spieler (bzw. jedes Team) startet. Das Spiel endet, sobald einer 0 erreicht.</p>
 <div class="crow"><div class="cl">Startpunkte</div><div class="pdg" id="pd-presets"></div><input class="numin" type="number" inputmode="numeric" min="1" step="1" id="pd-start" aria-label="Startpunkte Puan düşme" style="margin-top:8px"></div>
 <h2 class="sh">Spielerfarben</h2>
 <p class="hint" style="margin-top:0">Gilt für alle Spielarten, auch mit Partner.</p>
@@ -591,7 +606,7 @@ function renderHistory(){
     h+='<h2 class="sh">Bilanz</h2><div class="bil">'+nm.map(function(n){return '<span>'+esc(n)+': '+bil[n].w+' Siege · '+bil[n].l+' Niederlagen</span>'}).join("")+'</div><h2 class="sh">Spiele</h2>';
     hs.forEach(function(e){
       var o=outcome(e),d=new Date(e.t),ds=d.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})+" · "+d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
-      h+='<div class="hi"><div class="hd"><span>'+ds+'</span><span>'+(LAB[e.mode]||"")+(e.team?" · Partner":"")+'</span></div>'+
+      h+='<div class="hi"><div class="hd"><span>'+ds+'</span><span>'+(LAB[e.mode]||"")+(e.team||e.ptm?" · Partner":"")+'</span></div>'+
         '<div class="hw">Gewinner: <b>'+esc(o.l[o.w])+'</b> ('+fmt(o.v[o.w])+')<br>Verlierer: <b>'+esc(o.l[o.x])+'</b> ('+fmt(o.v[o.x])+')</div>'+
         '<div class="hs">'+o.l.map(function(n,i){return esc(n)+' '+fmt(o.v[i])}).join(" · ")+'</div></div>';
     });
@@ -613,31 +628,44 @@ hc.onclick=function(){
 };
 
 var PDT=[{k:"n",l:"Normal",d:2},{k:"o",l:"Okey",d:4},{k:"c",l:"Çift",d:8},{k:"co",l:"Çift + Okey",d:12},{k:"d",l:"Dizi",d:16},{k:"do",l:"Dizi + Okey",d:20}],PDV={n:2,o:4,c:8,co:12,d:16,"do":20};
-function pdBlank(){return{names:["Spieler 1","Spieler 2","Spieler 3","Spieler 4"],rounds:[{w:null,t:null}],hid:null,shown:false}}
+function pdBlank(){return{names:["Spieler 1","Spieler 2","Spieler 3","Spieler 4"],rounds:[{w:null,t:null}],hid:null,shown:false,team:false,tn:["Team A","Team B"]}}
 function pdLoad(){
   var s=pdBlank();
   try{var raw=localStorage.getItem(KEYS.pd);if(raw){var p=JSON.parse(raw);if(p&&p.names&&Array.isArray(p.rounds)){for(var k in p)s[k]=p[k]}}}catch(e){}
   if(!s.rounds.length)s.rounds=[{w:null,t:null}];
+  if(!s.tn||s.tn.length<2)s.tn=["Team A","Team B"];
+  s.team=!!s.team;
   return s;
 }
 function pdComplete(r){var q=S.rounds[r];return q.t==="x"||(!!q.t&&q.w!=null)}
-function pdEmpty(r){var q=S.rounds[r];return !q.t&&q.w==null}
+function pdEmpty(r){var q=S.rounds[r];return !q.t&&q.w==null&&!(q.g&&q.g.some(Boolean))}
+function pdG(q,i){return !!(q.g&&q.g[i])}
 function pdCalc(){
-  var s0=pdStartVal(),rem=[s0,s0,s0,s0],ser=[[s0],[s0],[s0],[s0]],over=0,n=0;
+  var s0=pdStartVal(),ne=S.team?2:4,rem=[],ser=[],i,over=0,n=0;
+  for(i=0;i<ne;i++){rem.push(s0);ser.push([s0])}
+  function ent(p){return S.team?(p<2?0:1):p}
   for(var r=0;r<S.rounds.length;r++){
-    if(!pdComplete(r))break;
-    var q=S.rounds[r],v=q.t==="x"?1:PDV[q.t];
-    rem=rem.map(function(x,i){return q.t==="x"||i!==q.w?x-v:x});
-    n++;ser.forEach(function(s,i){s.push(rem[i])});
+    var q=S.rounds[r],comp=pdComplete(r),any=false,p;
+    for(p=0;p<4;p++)if(pdG(q,p)){any=true;for(i=0;i<ne;i++)if(i!==ent(p))rem[i]-=1}
+    if(comp){
+      any=true;
+      if(q.t==="x"){for(i=0;i<ne;i++)rem[i]-=1}
+      else{var v=PDV[q.t];for(i=0;i<ne;i++)if(i!==ent(q.w))rem[i]-=v}
+    }
+    if(!any)break;
+    n++;ser.forEach(function(s,k){s.push(rem[k])});
     if(Math.min.apply(null,rem)<=0){over=n;break}
+    if(!comp)break;
   }
-  return{rem:rem,ser:ser,n:n,over:over};
+  return{rem:rem,ser:ser,n:n,over:over,ne:ne};
 }
 function pdResText(r){
-  var q=S.rounds[r];
-  if(q.t==="x")return "Taşlar bitti: alle −1";
-  if(q.t&&q.w!=null){var t=PDT.filter(function(x){return x.k===q.t})[0];return esc(S.names[q.w])+" · "+t.l+": alle anderen −"+t.d}
-  return "";
+  var q=S.rounds[r],a="",g=[];
+  for(var i=0;i<4;i++)if(pdG(q,i))g.push(esc(S.names[i]));
+  if(q.t==="x")a="Taşlar bitti: alle −1";
+  else if(q.t&&q.w!=null){var t=PDT.filter(function(x){return x.k===q.t})[0];a=esc(S.names[q.w])+" · "+t.l+": "+(S.team?"Gegner":"alle anderen")+" −"+t.d}
+  if(g.length)a+=(a?" · ":"")+"Gösterge: "+g.join(", ");
+  return a;
 }
 function pdRoundHTML(r){
   var q=S.rounds[r],h='<div class="pdr"><div class="pdh"><span class="pdn">Runde '+(r+1)+'</span><span class="pdres">'+pdResText(r)+'</span></div>';
@@ -645,7 +673,10 @@ function pdRoundHTML(r){
   S.names.forEach(function(n,i){h+='<button class="pk" style="--cc:var(--p'+i+')" data-r="'+r+'" data-w="'+i+'" aria-pressed="'+(q.w===i&&q.t!=="x")+'">'+esc(n)+'</button>'});
   h+='</div><div class="pdl">Wie?</div><div class="pdg">';
   PDT.forEach(function(t){h+='<button class="pk nodot" data-r="'+r+'" data-t="'+t.k+'" aria-pressed="'+(q.t===t.k)+'">'+t.l+' <small>−'+t.d+'</small></button>'});
-  h+='<button class="pk nodot" data-r="'+r+'" data-t="x" aria-pressed="'+(q.t==="x")+'">Kimse kapamadı <small>alle −1</small></button></div></div>';
+  h+='<button class="pk nodot" data-r="'+r+'" data-t="x" aria-pressed="'+(q.t==="x")+'">Kimse kapamadı <small>alle −1</small></button></div>';
+  h+='<div class="pdl">Gösterge gezeigt von:</div><div class="pdg w4">';
+  S.names.forEach(function(n,i){h+='<button class="ci" data-r="'+r+'" data-g="'+i+'" aria-pressed="'+pdG(q,i)+'" aria-label="Runde '+(r+1)+', '+esc(n)+', Gösterge gezeigt">'+esc(n)+'</button>'});
+  h+='</div></div>';
   return h;
 }
 function pdRows(){
@@ -658,6 +689,10 @@ function pdRows(){
   el.querySelectorAll("[data-t]").forEach(function(b){b.onclick=function(){
     var q=S.rounds[+b.dataset.r],t=b.dataset.t;
     q.t=q.t===t?null:t;if(q.t==="x")q.w=null;pdChanged(+b.dataset.r)}});
+  el.querySelectorAll("[data-g]").forEach(function(b){b.onclick=function(){
+    var q=S.rounds[+b.dataset.r],i=+b.dataset.g;
+    if(!q.g)q.g=[false,false,false,false];
+    q.g[i]=!q.g[i];pdChanged(+b.dataset.r)}});
 }
 function pdChanged(r){
   var c=pdCalc();
@@ -679,23 +714,38 @@ function pdNames(){
 }
 function pdUI(){
   var c=pdCalc(),rem=c.rem,best=Math.max.apply(null,rem),worst=Math.min.apply(null,rem),started=c.n>0,h="<span></span>";
-  var ni=document.querySelectorAll("#pdnames input");
-  rem.forEach(function(v,i){
-    var ld=started&&v===best&&best>worst,ls=started&&v===worst&&worst<best,lost=v<=0;
-    h+='<div class="cell'+(ld?' lead':'')+(ls||lost?' most':'')+'" style="--cn:var(--q'+i+')">'+Math.max(0,fmt(v))+'<small>'+(lost?'Verloren':ld?'vorne':ls?'letzter':'übrig')+'</small></div>';
-    if(ni[i]){ni[i].classList.toggle("lead",ld);ni[i].classList.toggle("most",ls||lost)}
-  });
-  $("pdtot").innerHTML=h;
+  function info(v){var ld=started&&v===best&&best>worst,ls=started&&v===worst&&worst<best,lost=v<=0;return{ld:ld,most:ls||lost,lbl:lost?"Verloren":ld?"vorne":ls?"letzter":"übrig"}}
+  var ni=document.querySelectorAll("#pdnames input"),ti=document.querySelectorAll("#pdtn input");
+  if(S.team){
+    rem.forEach(function(v,i){var f=info(v);h+='<div class="cell'+(f.ld?' lead':'')+(f.most?' most':'')+'" style="--cn:var(--u'+i+')">'+Math.max(0,fmt(v))+'<small>'+f.lbl+'</small></div>';if(ti[i]){ti[i].classList.toggle("lead",f.ld);ti[i].classList.toggle("most",f.most)}});
+    $("pdttot").innerHTML=h;
+    ni.forEach(function(n){n.classList.remove("lead");n.classList.remove("most")});
+  }else{
+    rem.forEach(function(v,i){var f=info(v);h+='<div class="cell'+(f.ld?' lead':'')+(f.most?' most':'')+'" style="--cn:var(--q'+i+')">'+Math.max(0,fmt(v))+'<small>'+f.lbl+'</small></div>';if(ni[i]){ni[i].classList.toggle("lead",f.ld);ni[i].classList.toggle("most",f.most)}});
+    $("pdtot").innerHTML=h;
+  }
   var el=$("pdnotes");
   el.innerHTML=c.over?'<button class="note done" id="pd-res">Spiel beendet – Ergebnis ansehen</button>':"";
   el.hidden=!c.over;
   var pr=$("pd-res");if(pr)pr.onclick=pdOpenResult;
   pdSync(c);pdChartUI();
 }
+function pdTnames(){
+  var h="<span></span>";
+  S.tn.forEach(function(n,i){h+='<input aria-label="Teamname '+(i+1)+'" style="--cc:var(--t'+i+')" value="'+String(n).replace(/"/g,"&quot;")+'" data-n="'+i+'">'});
+  var el=$("pdtn");el.innerHTML=h;
+  el.querySelectorAll("input").forEach(function(inp){inp.oninput=function(){S.tn[+inp.dataset.n]=inp.value;save()};inp.onfocus=function(){inp.select()}});
+}
+function pdTeamUI(){
+  $("pd-solo").setAttribute("aria-pressed",!S.team);$("pd-team").setAttribute("aria-pressed",S.team);
+  $("pdtn").hidden=!S.team;$("pdttot").hidden=!S.team;$("pdtot").hidden=S.team;
+  $("pdboard").classList.toggle("team",S.team);
+  pdTnames();pdUI();
+}
 function pdSync(c){
   var hs=loadHist();
   if(c.over){
-    var ent={t:Date.now(),mode:"pd",team:false,low:false,names:S.names.slice(),tn:["",""],sums:c.rem.map(fmt),cift:[0,0,0,0]};
+    var ent={t:Date.now(),mode:"pd",team:false,ptm:S.team,low:false,names:S.team?S.tn.slice(0,2):S.names.slice(),tn:["",""],sums:c.rem.map(fmt),cift:[0,0,0,0]};
     if(!S.hid){S.hid="g"+Date.now()+Math.floor(Math.random()*1000);save()}
     ent.id=S.hid;var k=-1;hs.forEach(function(e,i){if(e.id===S.hid)k=i});
     if(k>=0){ent.t=hs[k].t;hs[k]=ent}else hs.unshift(ent);
@@ -704,34 +754,39 @@ function pdSync(c){
     saveHist(hs.filter(function(e){return e.id!==S.hid}));S.hid=null;S.shown=false;save();
   }
 }
+function pdLab(){return S.team?S.tn.slice(0,2):S.names.slice()}
+function pdCols(n){var a=[];for(var i=0;i<n;i++)a.push("var(--"+(S.team?"t":"p")+i+")");return a}
 function pdChartUI(){
   var d=$("pdvd");if(!d||!d.open)return;
   var c=pdCalc();
-  $("pdchart").innerHTML=c.n<1?'<p class="hint" style="margin:6px 2px">Noch keine abgeschlossene Runde.</p>':lineChart(c.ser,[0,1,2,3].map(function(i){return 'var(--p'+i+')'}),S.names,c.n);
+  $("pdchart").innerHTML=c.n<1?'<p class="hint" style="margin:6px 2px">Noch keine abgeschlossene Runde.</p>':lineChart(c.ser,pdCols(c.ne),pdLab(),c.n);
 }
 function renderResultPd(){
-  var c=pdCalc(),rem=c.rem,n=4,best=Math.max.apply(null,rem),worst=Math.min.apply(null,rem),w=rem.indexOf(best),x=rem.indexOf(worst);
-  function tile(cls,lbl,i){return '<div class="rt '+cls+'"><div class="rl">'+lbl+'</div><div class="rnm">'+esc(S.names[i])+'</div><div class="rp">'+Math.max(0,fmt(rem[i]))+'</div></div>'}
+  var c=pdCalc(),rem=c.rem,n=c.ne,lab=pdLab(),best=Math.max.apply(null,rem),worst=Math.min.apply(null,rem),w=rem.indexOf(best),x=rem.indexOf(worst);
+  function tile(cls,l,i){return '<div class="rt '+cls+'"><div class="rl">'+l+'</div><div class="rnm">'+esc(lab[i])+'</div><div class="rp">'+Math.max(0,fmt(rem[i]))+'</div>'+(S.team?'<div class="rs">'+esc(S.names[i*2])+' &amp; '+esc(S.names[i*2+1])+'</div>':'')+'</div>'}
   $("r-tiles").innerHTML=tile("win","Gewinner",w)+tile("lose","Verlierer",x);
-  $("r-sub").textContent="Puan düşme · beendet in Runde "+c.n;
-  var order=[0,1,2,3].sort(function(a,b){return rem[b]-rem[a]}),h="";
+  $("r-sub").textContent="Puan düşme"+(S.team?" · mit Partner":"")+" · beendet in Runde "+c.n;
+  var order=[];for(var k=0;k<n;k++)order.push(k);order.sort(function(a,b){return rem[b]-rem[a]});
+  var h="",cl=S.team?"t":"p";
   order.forEach(function(i,pos){
     var pct=best===worst?100:25+75*(rem[i]-worst)/(best-worst);
-    h+='<div class="rk'+(pos===0?' win':'')+(pos===n-1?' lose':'')+'"><span class="pos">'+(pos+1)+'.</span><div><div class="nm">'+esc(S.names[i])+'</div><div class="bar2" style="width:'+pct.toFixed(0)+'%;--rc:var(--p'+i+')"></div></div><span class="pt">'+Math.max(0,fmt(rem[i]))+'</span></div>';
+    h+='<div class="rk'+(pos===0?' win':'')+(pos===n-1?' lose':'')+'"><span class="pos">'+(pos+1)+'.</span><div><div class="nm">'+esc(lab[i])+'</div><div class="bar2" style="width:'+pct.toFixed(0)+'%;--rc:var(--'+cl+i+')"></div></div><span class="pt">'+Math.max(0,fmt(rem[i]))+'</span></div>';
   });
   $("r-rank").innerHTML=h;
-  $("r-chart").innerHTML=lineChart(c.ser,[0,1,2,3].map(function(i){return 'var(--p'+i+')'}),S.names,c.n);
+  $("r-chart").innerHTML=lineChart(c.ser,pdCols(n),lab,c.n);
 }
 function pdOpenResult(){S.shown=true;save();renderResultPd();show("result")}
 function pdNew(){S.rounds=[{w:null,t:null}];S.hid=null;S.shown=false;save();pdRows();show("pdgame");pdUI()}
 function enterPd(){
   V="pd";KEY=KEYS.pd;S=pdLoad();
-  pdNames();pdRows();pdUI();pdEnsure();
+  pdNames();pdRows();pdTeamUI();pdEnsure();
   show("pdgame");
   try{if(location.hash!=="#pd")location.hash="pd"}catch(e){}
 }
 $("pd-back").onclick=function(){try{if(location.hash)location.hash=""}catch(e){}if(V)leave()};
 $("g-pd").onclick=openSettings;
+$("pd-solo").onclick=function(){S.team=false;save();pdTeamUI()};
+$("pd-team").onclick=function(){S.team=true;save();pdTeamUI()};
 $("pd-add").onclick=function(){pdAdd(true)};
 $("pd-del").onclick=function(){
   if(ST.auto)while(S.rounds.length>1&&pdEmpty(S.rounds.length-1))S.rounds.pop();

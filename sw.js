@@ -1,6 +1,6 @@
 // Bei jeder Änderung an index.html die Versionsnummer erhöhen (v1 -> v2),
 // damit die installierten Apps die neue Version laden.
-var CACHE = "okey-punkte-v16";
+var CACHE = "okey-punkte-v17";
 var CORE = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"];
 
 self.addEventListener("install", function (e) {
