@@ -201,6 +201,33 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--gold-edge);outl
 #pdgame .set{padding:10px 9px;font-size:.78rem;white-space:nowrap}
 .pdn{white-space:nowrap}
 #pdgame .back{padding:10px 12px;white-space:nowrap}
+.vt{display:grid;grid-template-columns:44px repeat(4,minmax(0,1fr));gap:5px;align-items:stretch;margin-bottom:5px}
+.vh{background:var(--tile);color:var(--ink);border-radius:9px 9px 0 0;border-top:4px solid var(--cc);text-align:center;font-weight:700;font-size:.72rem;padding:5px 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vr{color:var(--soft);font-size:.7rem;font-weight:700;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;line-height:1.15}
+.vr small{font-size:.58rem;font-weight:600}
+.vc{background:var(--tile);color:var(--ink);border-radius:9px;text-align:center;padding:5px 2px 4px}
+.vc .vn{font-size:.65rem;font-weight:700;color:var(--tile-mute);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vc .tv{font-weight:800;font-size:1rem;font-variant-numeric:tabular-nums}
+.vc .tc{font-size:.66rem;color:var(--tile-mute);font-variant-numeric:tabular-nums}
+.vb{display:inline-block;font-size:.58rem;font-weight:800;background:var(--ink);color:var(--tile);border-radius:6px;padding:0 4px;margin-left:2px}
+.vsum .vc{background:var(--gold)}
+.pdv{background:var(--felt2);border:1px solid var(--felt-line);border-radius:12px;padding:8px 10px;margin-bottom:8px}
+.pdvh{font-size:.78rem;color:var(--soft);margin-bottom:6px}
+.pdvg{display:grid;gap:6px}
+.hb{display:block;width:100%;margin-top:8px;font:inherit;font-weight:700;font-size:.8rem;border:1px solid var(--felt-line);background:transparent;color:var(--tile);border-radius:10px;padding:9px 12px;cursor:pointer}
+.el{font-size:.62rem;color:var(--soft);text-align:center;font-weight:600}
+.eff{text-align:center;font-size:.85rem;font-weight:800;color:var(--gold);min-height:1.2em;font-variant-numeric:tabular-nums}
+.pdg.pdlr{display:grid}
+.pdlr .vc{padding:4px 2px}
+.dl{display:flex;justify-content:center}
+.dpill{display:block;text-align:center;font-size:.62rem;font-weight:800;background:var(--gold);color:#5a4400;border-radius:999px;padding:2px 8px;white-space:nowrap}
+.dpill2{display:inline-block;margin-left:8px;font-size:.66rem;font-weight:800;background:var(--gold);color:#5a4400;border-radius:999px;padding:2px 8px;vertical-align:1px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dq{background:var(--felt2);border:1px solid var(--felt-line);border-radius:14px;padding:10px 12px;margin-bottom:10px}
+.dqt{font-weight:800;margin-bottom:8px}
+.dqh{font-size:.75rem;color:var(--soft);margin-top:8px}
+.dqs{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.8rem;color:var(--soft)}
+.dqs b{color:var(--tile)}
+.dqb{font:inherit;font-weight:700;font-size:.75rem;border:1px solid var(--felt-line);background:transparent;color:var(--tile);border-radius:9px;padding:6px 10px;cursor:pointer;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -232,6 +259,7 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--gold-edge);outl
 <div class="grid tot" id="tot"><span></span></div>
 <div class="notes" id="notes" hidden></div>
 </div>
+<div id="dealer"></div>
 <div id="rows"></div>
 <div class="act">
 <button class="main" id="add">Nächste Runde</button>
@@ -254,6 +282,7 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--gold-edge);outl
 <div class="grid tot" id="pdtot"><span></span></div>
 <div class="notes" id="pdnotes" hidden></div>
 </div>
+<div id="pddealer"></div>
 <div id="pdrows"></div>
 <div class="act">
 <button class="main" id="pd-add">Nächste Runde</button>
@@ -294,9 +323,17 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--gold-edge);outl
 <div class="panel"><h2>Verlauf</h2><div id="r-chart"></div></div>
 <div class="rbtns">
 <button class="main" id="r-new">Neues Spiel</button>
+<button id="r-trail">Spielverlauf ansehen</button>
 <button id="r-hist">Letzte Spiele</button>
 <button id="r-menu">Zum Menü</button>
 </div>
+</div>
+
+<div id="verlauf" hidden>
+<div class="top"><button class="back" id="v-back">‹ Zurück</button><h1>Spielverlauf</h1></div>
+<p class="sub" id="v-sub" style="margin-bottom:10px"></p>
+<div class="panel"><h2>Verlauf</h2><div id="v-chart"></div></div>
+<div class="panel"><h2>Punkte pro Runde</h2><div id="v-table"></div></div>
 </div>
 
 <div id="history" hidden>
@@ -378,7 +415,14 @@ function tallyUI(){
   }
   $("tally").innerHTML=h;
 }
-function totals(){tallyUI();totals0();notesUI();syncHistory();chartUI()}
+function effUI(){
+  document.querySelectorAll("#rows .eff").forEach(function(el){
+    var r=+el.dataset.r,i=+el.dataset.c,q=S.rounds[r];
+    var v=q?parseFloat(q[i]):NaN;
+    el.textContent=isNaN(v)?"":fmt(v*mu(r,i)*cf(r));
+  });
+}
+function totals(){tallyUI();totals0();notesUI();syncHistory();chartUI();effUI()}
 function totals0(){
   var s=sums(),any=S.rounds.some(function(r){return r.some(function(v){return v!==""})});
   function fl(v){var best=S.low?Math.min.apply(null,v):Math.max.apply(null,v),mx=Math.max.apply(null,v),mn=Math.min.apply(null,v);return v.map(function(x){return{ld:any&&x===best,ms:any&&mx>mn&&x===mx}})}
@@ -406,7 +450,7 @@ function names(){
   var h="<span></span>";
   S.names.forEach(function(n,i){var cc="--p"+i;h+='<input aria-label="Name Spieler '+(i+1)+'" style="--cc:var('+cc+')" value="'+n.replace(/"/g,"&quot;")+'" data-n="'+i+'">'});
   var el=$("names");el.innerHTML=h;
-  el.querySelectorAll("input").forEach(function(inp){inp.oninput=function(){S.names[+inp.dataset.n]=inp.value;save()};inp.onfocus=function(){inp.select()}});
+  el.querySelectorAll("input").forEach(function(inp){inp.oninput=function(){S.names[+inp.dataset.n]=inp.value;save();dealerUI()};inp.onfocus=function(){inp.select()}});
 }
 function roundComplete(r){return S.rounds[r].every(function(v){return v!==""&&!isNaN(parseFloat(v))})}
 function isEmptyRound(r){return S.rounds[r].every(function(v){return v===""})&&!(S.cift[r]&&S.cift[r].some(Boolean))&&!S.fach[r]&&!(S.mult[r]&&S.mult[r].some(function(m){return m>1}))&&(S.col[r]==null||S.col[r]<0)}
@@ -428,9 +472,10 @@ function ensureNext(){var n=S.rounds.length;if(ST.auto&&n<11&&roundComplete(n-1)
 function autoNext(r){if(ST.auto&&r<10&&r===S.rounds.length-1&&roundComplete(r))addRound(false)}
 function roundHTML(ri){
   var h="",r=S.rounds[ri];
-    h+='<div class="grid row"><div class="rn"><small>Runde</small>'+(ri+1)+'</div>';
+    h+='<div class="grid row">';if(S.dealer!=null){h+='<span></span>';for(var dd=0;dd<4;dd++)h+='<div class="dl">'+((S.dealer+ri)%4===dd?'<span class="dpill">Verteiler</span>':'')+'</div>'}
+  h+='<div class="rn"><small>Runde</small>'+(ri+1)+'</div>';
     r.forEach(function(v,i){h+='<input type="number" step="any" aria-label="Runde '+(ri+1)+', '+S.names[i].replace(/"/g,"")+'" value="'+v+'" data-r="'+ri+'" data-c="'+i+'">'});
-    h+='<button class="fa" aria-pressed="'+(!!S.fach[ri])+'" data-r="'+ri+'" aria-label="Runde '+(ri+1)+', Fach: alle Faktoren verdoppeln">Fach</button>';r.forEach(function(v,i){var m=mu(ri,i);h+='<button class="mb" data-m="'+m+'" data-r="'+ri+'" data-c="'+i+'" aria-label="Runde '+(ri+1)+', '+S.names[i].replace(/"/g,"")+', Faktor '+m+'. Tippen zum Ändern">×'+m+'</button>'});h+='<span></span>';r.forEach(function(v,i){h+='<button class="ci" aria-pressed="'+cift(ri,i)+'" data-r="'+ri+'" data-c="'+i+'" aria-label="Runde '+(ri+1)+', '+S.names[i].replace(/"/g,"")+', Çift">Çift</button>'});h+='<div class="chips" role="group" aria-label="Aufgemacht mit, Runde '+(ri+1)+'">';
+    h+='<span class="el">Punkte</span>';r.forEach(function(v,i){h+='<div class="eff" data-r="'+ri+'" data-c="'+i+'"></div>'});h+='<button class="fa" aria-pressed="'+(!!S.fach[ri])+'" data-r="'+ri+'" aria-label="Runde '+(ri+1)+', Fach: alle Faktoren verdoppeln">Fach</button>';r.forEach(function(v,i){var m=mu(ri,i);h+='<button class="mb" data-m="'+m+'" data-r="'+ri+'" data-c="'+i+'" aria-label="Runde '+(ri+1)+', '+S.names[i].replace(/"/g,"")+', Faktor '+m+'. Tippen zum Ändern">×'+m+'</button>'});h+='<span></span>';r.forEach(function(v,i){h+='<button class="ci" aria-pressed="'+cift(ri,i)+'" data-r="'+ri+'" data-c="'+i+'" aria-label="Runde '+(ri+1)+', '+S.names[i].replace(/"/g,"")+', Çift">Çift</button>'});h+='<div class="chips" role="group" aria-label="Aufgemacht mit, Runde '+(ri+1)+'">';
     CN.forEach(function(n,k){h+='<button class="chip" data-k="'+ri+'" data-c="'+k+'" aria-pressed="'+(S.col[ri]===k)+'" style="--cc:var('+cols[CO[k]]+');--ct:'+CT[k]+'">'+n+'</button>'});
     h+='</div></div>';
   return h}
@@ -462,7 +507,7 @@ function enter(v){
   V=v;KEY=KEYS[v];S=load(v);trimTrailing(!ST.auto);
   $("gtitle").textContent=TITLES[v];
   show("game");
-  tnames();rows();cfg();mode();teamUI();ensureNext();
+  tnames();rows();cfg();mode();teamUI();dealerUI();ensureNext();
   try{if(location.hash!=="#"+v)location.hash=v}catch(e){}
 }
 function leave(){V=null;show("menu")}
@@ -483,9 +528,9 @@ var rb=$("reset"),t;
 rb.onclick=function(){
   if(!rb.classList.contains("armed")){rb.classList.add("armed");rb.textContent="Wirklich?";t=setTimeout(function(){rb.classList.remove("armed");rb.textContent="Zurücksetzen"},3000);return}
   clearTimeout(t);rb.classList.remove("armed");rb.textContent="Zurücksetzen";
-  S.rounds=fresh();S.mult=[];S.col=[];S.cift=[];S.fach=[];S.hid=null;S.shown=false;save();rows();totals();
+  S.rounds=fresh();S.mult=[];S.col=[];S.cift=[];S.fach=[];S.hid=null;S.shown=false;S.dealer=null;save();rows();totals();dealerUI();
 };
-function show(w){["menu","game","pdgame","settings","result","history"].forEach(function(id){$(id).hidden=id!==w});window.scrollTo(0,0)}
+function show(w){["menu","game","pdgame","settings","result","history","verlauf"].forEach(function(id){$(id).hidden=id!==w});window.scrollTo(0,0)}
 var PAL=[{n:"Schwarz",f:"#1c1b18",u:"#1c1b18"},{n:"Blau",f:"#1f55b5",u:"#1f55b5"},{n:"Rot",f:"#c8312b",u:"#c8312b"},{n:"Gelb",f:"#e2a418",u:"#a56a00"},{n:"Lila",f:"#8e4bb8",u:"#8e4bb8"},{n:"Orange",f:"#e8742a",u:"#b4501a"},{n:"Türkis",f:"#1a9aa6",u:"#0e707a"},{n:"Rosa",f:"#d9558f",u:"#b23a70"}];
 var SKEY="okey-settings-v1",ST={pc:[0,1,2,3],tc:[1,3],auto:true,cf:[5,5,10,10,20],pd:20},back="menu";
 function okIdx(x){return typeof x==="number"&&x>=0&&x<PAL.length&&x%1===0}
@@ -544,7 +589,7 @@ function outcome(e){
 function syncHistory(){
   var hs=loadHist();
   if(completedN()>=11){
-    var ent=makeEntry();
+    var ent=makeEntry();ent.det=snapNow();
     if(!S.hid){S.hid="g"+Date.now()+Math.floor(Math.random()*1000);save()}
     ent.id=S.hid;var k=-1;hs.forEach(function(e,i){if(e.id===S.hid)k=i});
     if(k>=0){ent.t=hs[k].t;hs[k]=ent}else hs.unshift(ent);
@@ -595,7 +640,7 @@ function renderResult(){
   $("r-chart").innerHTML=chartHTML();
 }
 function openResult(){S.shown=true;save();renderResult();show("result")}
-function newGame(){S.rounds=fresh();S.mult=[];S.col=[];S.cift=[];S.fach=[];S.hid=null;S.shown=false;save();rows();show("game");totals()}
+function newGame(){S.rounds=fresh();S.mult=[];S.col=[];S.cift=[];S.fach=[];S.hid=null;S.shown=false;S.dealer=null;save();rows();show("game");totals();dealerUI()}
 function renderHistory(){
   var hs=loadHist(),h="";
   if(!hs.length){h='<p class="hint">Noch keine beendeten Spiele. Sobald Runde 11 abgeschlossen ist, erscheint das Spiel hier.</p>'}
@@ -608,10 +653,11 @@ function renderHistory(){
       var o=outcome(e),d=new Date(e.t),ds=d.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})+" · "+d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
       h+='<div class="hi"><div class="hd"><span>'+ds+'</span><span>'+(LAB[e.mode]||"")+(e.team||e.ptm?" · Partner":"")+'</span></div>'+
         '<div class="hw">Gewinner: <b>'+esc(o.l[o.w])+'</b> ('+fmt(o.v[o.w])+')<br>Verlierer: <b>'+esc(o.l[o.x])+'</b> ('+fmt(o.v[o.x])+')</div>'+
-        '<div class="hs">'+o.l.map(function(n,i){return esc(n)+' '+fmt(o.v[i])}).join(" · ")+'</div></div>';
+        '<div class="hs">'+o.l.map(function(n,i){return esc(n)+' '+fmt(o.v[i])}).join(" · ")+'</div>'+(e.det?'<button class="hb" data-id="'+e.id+'">Spielverlauf ansehen</button>':'')+'</div>';
     });
   }
   $("h-list").innerHTML=h;
+  document.querySelectorAll("#h-list .hb").forEach(function(b){b.onclick=function(){var e=hs.filter(function(x){return x.id===b.dataset.id})[0];if(e&&e.det)openTrail(e.det,"history")}});
 }
 function openHistory(from){histBack=from;renderHistory();show("history")}
 $("vd").addEventListener("toggle",chartUI);
@@ -667,8 +713,9 @@ function pdResText(r){
   if(g.length)a+=(a?" · ":"")+"Gösterge: "+g.join(", ");
   return a;
 }
-function pdRoundHTML(r){
-  var q=S.rounds[r],h='<div class="pdr"><div class="pdh"><span class="pdn">Runde '+(r+1)+'</span><span class="pdres">'+pdResText(r)+'</span></div>';
+function pdRoundHTML(r,c){
+  var q=S.rounds[r],h='<div class="pdr"><div class="pdh"><span><span class="pdn">Runde '+(r+1)+'</span>'+dealerPill(r)+'</span><span class="pdres">'+pdResText(r)+'</span></div>';
+  if(c&&r<c.n){var lb=pdLab(),k;h+='<div class="pdl">Verloren in dieser Runde:</div><div class="pdg pdlr" style="grid-template-columns:repeat('+c.ne+',minmax(0,1fr))">';for(k=0;k<c.ne;k++){var d=c.ser[k][r]-c.ser[k][r+1];h+='<div class="vc"><div class="vn">'+esc(lb[k])+'</div><div class="tv">'+(d?'−'+fmt(d):'0')+'</div></div>'}h+='</div>'}
   h+='<div class="pdl">Wer hat geschlossen?</div><div class="pdg w4">';
   S.names.forEach(function(n,i){h+='<button class="pk" style="--cc:var(--p'+i+')" data-r="'+r+'" data-w="'+i+'" aria-pressed="'+(q.w===i&&q.t!=="x")+'">'+esc(n)+'</button>'});
   h+='</div><div class="pdl">Wie?</div><div class="pdg">';
@@ -680,7 +727,7 @@ function pdRoundHTML(r){
   return h;
 }
 function pdRows(){
-  var h="";S.rounds.forEach(function(q,r){h+=pdRoundHTML(r)});
+  var h="",c=pdCalc();S.rounds.forEach(function(q,r){h+=pdRoundHTML(r,c)});
   var el=$("pdrows");el.innerHTML=h;
   el.querySelectorAll("[data-w]").forEach(function(b){b.onclick=function(){
     var q=S.rounds[+b.dataset.r],w=+b.dataset.w;
@@ -710,7 +757,7 @@ function pdNames(){
   var h="<span></span>";
   S.names.forEach(function(n,i){h+='<input aria-label="Name Spieler '+(i+1)+'" style="--cc:var(--p'+i+')" value="'+String(n).replace(/"/g,"&quot;")+'" data-n="'+i+'">'});
   var el=$("pdnames");el.innerHTML=h;
-  el.querySelectorAll("input").forEach(function(inp){inp.oninput=function(){S.names[+inp.dataset.n]=inp.value;save();pdRows();pdUI()};inp.onfocus=function(){inp.select()}});
+  el.querySelectorAll("input").forEach(function(inp){inp.oninput=function(){S.names[+inp.dataset.n]=inp.value;save();pdRows();pdUI();pdDealerUI()};inp.onfocus=function(){inp.select()}});
 }
 function pdUI(){
   var c=pdCalc(),rem=c.rem,best=Math.max.apply(null,rem),worst=Math.min.apply(null,rem),started=c.n>0,h="<span></span>";
@@ -745,7 +792,7 @@ function pdTeamUI(){
 function pdSync(c){
   var hs=loadHist();
   if(c.over){
-    var ent={t:Date.now(),mode:"pd",team:false,ptm:S.team,low:false,names:S.team?S.tn.slice(0,2):S.names.slice(),tn:["",""],sums:c.rem.map(fmt),cift:[0,0,0,0]};
+    var ent={t:Date.now(),mode:"pd",team:false,ptm:S.team,low:false,names:S.team?S.tn.slice(0,2):S.names.slice(),tn:["",""],sums:c.rem.map(fmt),cift:[0,0,0,0]};ent.det=snapNow();
     if(!S.hid){S.hid="g"+Date.now()+Math.floor(Math.random()*1000);save()}
     ent.id=S.hid;var k=-1;hs.forEach(function(e,i){if(e.id===S.hid)k=i});
     if(k>=0){ent.t=hs[k].t;hs[k]=ent}else hs.unshift(ent);
@@ -776,10 +823,10 @@ function renderResultPd(){
   $("r-chart").innerHTML=lineChart(c.ser,pdCols(n),lab,c.n);
 }
 function pdOpenResult(){S.shown=true;save();renderResultPd();show("result")}
-function pdNew(){S.rounds=[{w:null,t:null}];S.hid=null;S.shown=false;save();pdRows();show("pdgame");pdUI()}
+function pdNew(){S.rounds=[{w:null,t:null}];S.hid=null;S.shown=false;S.dealer=null;save();pdRows();show("pdgame");pdUI();pdDealerUI()}
 function enterPd(){
   V="pd";KEY=KEYS.pd;S=pdLoad();
-  pdNames();pdRows();pdTeamUI();pdEnsure();
+  pdNames();pdRows();pdTeamUI();pdDealerUI();pdEnsure();
   show("pdgame");
   try{if(location.hash!=="#pd")location.hash="pd"}catch(e){}
 }
@@ -797,9 +844,68 @@ var pdrb=$("pd-reset"),pdt;
 pdrb.onclick=function(){
   if(!pdrb.classList.contains("armed")){pdrb.classList.add("armed");pdrb.textContent="Wirklich?";pdt=setTimeout(function(){pdrb.classList.remove("armed");pdrb.textContent="Zurücksetzen"},3000);return}
   clearTimeout(pdt);pdrb.classList.remove("armed");pdrb.textContent="Zurücksetzen";
-  S.rounds=[{w:null,t:null}];S.hid=null;S.shown=false;save();pdRows();pdUI();
+  S.rounds=[{w:null,t:null}];S.hid=null;S.shown=false;S.dealer=null;save();pdRows();pdUI();pdDealerUI();
 };
 $("pdvd").addEventListener("toggle",pdChartUI);
+
+var vBack="result";
+function snapNow(){return{s:JSON.parse(JSON.stringify(S)),cf:ST.cf.slice(),pd:ST.pd,mode:V}}
+function withSnap(det,fn){var s0=S,c0=ST.cf,p0=ST.pd;S=det.s;ST.cf=det.cf;ST.pd=det.pd;try{return fn()}finally{S=s0;ST.cf=c0;ST.pd=p0}}
+function trailNormal(){
+  var h='<p class="hint" style="margin:0 0 8px">Große Zahl: Punkte dieser Runde insgesamt (mit allen Faktoren). Darunter: Zwischenstand.</p>',cum=[0,0,0,0],i,r;
+  h+='<div class="vt"><span></span>'+S.names.map(function(n,i){return '<div class="vh" style="--cc:var(--p'+i+')">'+esc(n)+'</div>'}).join("")+'</div>';
+  for(r=0;r<S.rounds.length;r++){
+    if(isEmptyRound(r))continue;
+    var q=S.rounds[r],lab=(S.col[r]!=null&&S.col[r]>=0)?CN[S.col[r]]:"",fa=S.fach[r]?"Fach":"";
+    h+='<div class="vt"><div class="vr"><b>R'+(r+1)+'</b>'+(lab?'<small>'+esc(lab)+'</small>':'')+(fa?'<small>'+fa+'</small>':'')+'</div>';
+    for(i=0;i<4;i++){
+      var raw=parseFloat(q[i]),c=(isNaN(raw)?0:raw)*mu(r,i)*cf(r);cum[i]+=c;
+      var b="";if(cift(r,i))b+='<span class="vb">Çift</span>';if(mu(r,i)>1)b+='<span class="vb">×'+mu(r,i)+'</span>';
+      h+='<div class="vc"><div class="tv">'+fmt(c)+'</div><div class="tc">Σ '+fmt(cum[i])+(b?' '+b:'')+'</div></div>';
+    }
+    h+='</div>';
+  }
+  h+='<div class="vt vsum"><div class="vr"><b>Summe</b></div>'+cum.map(function(c){return '<div class="vc"><div class="tv">'+fmt(c)+'</div></div>'}).join("")+'</div>';
+  if(S.team)h+='<div class="vt vsum"><div class="vr"><small>Teams</small></div><div class="vc" style="grid-column:span 2"><div class="vn">'+esc(S.tn[0])+'</div><div class="tv">'+fmt(cum[0]+cum[1])+'</div></div><div class="vc" style="grid-column:span 2"><div class="vn">'+esc(S.tn[1])+'</div><div class="tv">'+fmt(cum[2]+cum[3])+'</div></div></div>';
+  return h;
+}
+function trailPd(){
+  var c=pdCalc(),lab=pdLab(),ne=c.ne,r,k;
+  var h='<p class="hint" style="margin:0 0 8px">Start: '+pdStartVal()+' Punkte. Große Zahl: in dieser Runde verlorene Punkte. Darunter: Punkte, die übrig sind.</p>';
+  for(r=0;r<c.n;r++){
+    h+='<div class="pdv"><div class="pdvh"><b>Runde '+(r+1)+'</b>'+(pdResText(r)?' · '+pdResText(r):'')+'</div><div class="pdvg" style="grid-template-columns:repeat('+ne+',minmax(0,1fr))">';
+    for(k=0;k<ne;k++){var cur=c.ser[k][r+1],prev=c.ser[k][r],d=prev-cur;
+      h+='<div class="vc"><div class="vn">'+esc(lab[k])+'</div><div class="tv">'+(d?'−'+fmt(d):'0')+'</div><div class="tc">übrig '+Math.max(0,fmt(cur))+'</div></div>'}
+    h+='</div></div>';
+  }
+  return h;
+}
+function pdChartHTML(){var c=pdCalc();return c.n<1?'<p class="hint" style="margin:6px 2px">Noch keine abgeschlossene Runde.</p>':lineChart(c.ser,pdCols(c.ne),pdLab(),c.n)}
+function openTrail(det,from){
+  vBack=from;
+  $("v-sub").textContent=LAB[det.mode]+(det.s.team?" · mit Partner":"");
+  $("v-chart").innerHTML=withSnap(det,function(){return det.mode==="pd"?pdChartHTML():chartHTML()});
+  $("v-table").innerHTML=withSnap(det,function(){return det.mode==="pd"?trailPd():trailNormal()});
+  show("verlauf");
+}
+$("r-trail").onclick=function(){openTrail(snapNow(),"result")};
+$("v-back").onclick=function(){show(vBack==="history"?"history":"result")};
+
+function dealerPanel(){
+  if(S.dealer==null){
+    var h='<div class="dq"><div class="dqt">Wer verteilt in der ersten Runde?</div><div class="pdg w4">';
+    S.names.forEach(function(n,i){h+='<button class="pk" style="--cc:var(--p'+i+')" data-d="'+i+'">'+esc(n)+'</button>'});
+    return h+'</div><div class="dqh">Danach verteilt im Uhrzeigersinn immer der nächste Spieler.</div></div>';
+  }
+  return '<div class="dq dqs"><span>Verteiler Runde 1: <b>'+esc(S.names[S.dealer])+'</b> · danach im Uhrzeigersinn</span><button class="dqb" data-dreset="1">ändern</button></div>';
+}
+function dealerBind(el,after){
+  el.querySelectorAll("[data-d]").forEach(function(b){b.onclick=function(){S.dealer=+b.dataset.d;save();after()}});
+  el.querySelectorAll("[data-dreset]").forEach(function(b){b.onclick=function(){S.dealer=null;save();after()}});
+}
+function dealerUI(){var el=$("dealer");el.innerHTML=dealerPanel();dealerBind(el,function(){rows();totals();dealerUI()})}
+function pdDealerUI(){var el=$("pddealer");el.innerHTML=dealerPanel();dealerBind(el,function(){pdRows();pdUI();pdDealerUI()})}
+function dealerPill(r){return S.dealer==null?"":'<span class="dpill2">Verteiler: '+esc(S.names[(S.dealer+r)%4])+'</span>'}
 window.addEventListener("hashchange",route);route();
 if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}
 </script>
