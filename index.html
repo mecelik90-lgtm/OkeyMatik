@@ -228,6 +228,14 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--gold-edge);outl
 .dqs{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.8rem;color:var(--soft)}
 .dqs b{color:var(--tile)}
 .dqb{font:inherit;font-weight:700;font-size:.75rem;border:1px solid var(--felt-line);background:transparent;color:var(--tile);border-radius:9px;padding:6px 10px;cursor:pointer;white-space:nowrap}
+.tm{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--felt2);border:1px solid var(--felt-line);border-radius:14px;padding:8px 12px;margin-bottom:10px}
+.tml{font-size:.65rem;font-weight:600;color:var(--soft)}
+.tmt{font-weight:800;font-size:1.5rem;line-height:1.1;font-variant-numeric:tabular-nums}
+.tmb{display:flex;gap:8px;align-items:center}
+.tmb button{font:inherit;font-weight:700;font-size:.85rem;border:1px solid var(--felt-line);background:transparent;color:var(--tile);border-radius:10px;padding:9px 12px;cursor:pointer;white-space:nowrap}
+.tmb .tmgo{background:var(--tile);color:var(--ink);border-color:var(--tile);box-shadow:0 3px 0 var(--tile-edge)}
+.tmb .tmgo.run{background:#d9453d;color:#fff;border-color:#d9453d;box-shadow:0 3px 0 #a8302a}
+.tmb .tmrs.armed{background:#d9453d;color:#fff;border-color:#d9453d}
 </style>
 </head>
 <body>
@@ -250,6 +258,7 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--gold-edge);outl
 <div class="bar"><div class="seg" role="group" aria-label="Wertung">
 <button id="m-low" aria-pressed="true">Wenigste Punkte gewinnt</button>
 <button id="m-high" aria-pressed="false">Meiste Punkte gewinnt</button></div></div>
+<div class="tm"><div><div class="tml">Spielzeit</div><div class="tmt" id="tm-time">00:00</div></div><div class="tmb"><button class="tmgo" id="tm-go">Start</button><button class="tmrs" id="tm-rs" hidden>Zurücksetzen</button></div></div>
 <details class="cf"><summary>Farbfaktoren</summary><div class="cfg" id="cfg"></div><p>Trage die Punkte auf dem Brett ein. Sie werden mit dem Faktor der Farbe multipliziert, mit der aufgemacht wurde (ohne gewählte Farbe ×1). Der Faktor gilt zusätzlich zum ×1/×2/×4/×8 des jeweiligen Spielers in dieser Runde.</p></details>
 <div class="board" id="board">
 <div class="grid tn" id="tn" hidden><span></span></div>
@@ -274,6 +283,7 @@ input:focus-visible,button:focus-visible{outline:3px solid var(--gold-edge);outl
 <div class="bar"><div class="seg" role="group" aria-label="Spielweise">
 <button id="pd-solo" aria-pressed="true">Jeder für sich</button>
 <button id="pd-team" aria-pressed="false">Mit Partner</button></div></div>
+<div class="tm"><div><div class="tml">Spielzeit</div><div class="tmt" id="pdtm-time">00:00</div></div><div class="tmb"><button class="tmgo" id="pdtm-go">Start</button><button class="tmrs" id="pdtm-rs" hidden>Zurücksetzen</button></div></div>
 <details class="cf" style="margin-bottom:12px"><summary>Regeln</summary><p>Alle starten mit <b id="pd-rule">20</b> Punkten. Wer schließt, zieht allen anderen Punkte ab: Normal 2, Okey 4, Çift 8, Çift + Okey 12, Dizi 16, Dizi + Okey 20. Schließt niemand und die Steine sind alle, verlieren alle 1 Punkt. Zeigt ein Spieler in einer Runde den Gösterge-Stein, verlieren alle anderen 1 Punkt. Mit Partner zählt ihr als zwei Teams (Spieler 1 + 2 gegen Spieler 3 + 4): Abzüge treffen nur das gegnerische Team. Sobald ein Spieler oder Team 0 erreicht, ist das Spiel zu Ende.</p></details>
 <div class="board" id="pdboard">
 <div class="grid tn" id="pdtn" hidden><span></span></div>
@@ -507,7 +517,7 @@ function enter(v){
   V=v;KEY=KEYS[v];S=load(v);trimTrailing(!ST.auto);
   $("gtitle").textContent=TITLES[v];
   show("game");
-  tnames();rows();cfg();mode();teamUI();dealerUI();ensureNext();
+  tnames();rows();cfg();mode();teamUI();dealerUI();ensureNext();tmUI();tmResume();
   try{if(location.hash!=="#"+v)location.hash=v}catch(e){}
 }
 function leave(){V=null;show("menu")}
@@ -528,7 +538,7 @@ var rb=$("reset"),t;
 rb.onclick=function(){
   if(!rb.classList.contains("armed")){rb.classList.add("armed");rb.textContent="Wirklich?";t=setTimeout(function(){rb.classList.remove("armed");rb.textContent="Zurücksetzen"},3000);return}
   clearTimeout(t);rb.classList.remove("armed");rb.textContent="Zurücksetzen";
-  S.rounds=fresh();S.mult=[];S.col=[];S.cift=[];S.fach=[];S.hid=null;S.shown=false;S.dealer=null;save();rows();totals();dealerUI();
+  S.rounds=fresh();S.mult=[];S.col=[];S.cift=[];S.fach=[];S.hid=null;S.shown=false;S.dealer=null;S.timer={ms:0,start:null};save();rows();totals();dealerUI();tmUI();
 };
 function show(w){["menu","game","pdgame","settings","result","history","verlauf"].forEach(function(id){$(id).hidden=id!==w});window.scrollTo(0,0)}
 var PAL=[{n:"Schwarz",f:"#1c1b18",u:"#1c1b18"},{n:"Blau",f:"#1f55b5",u:"#1f55b5"},{n:"Rot",f:"#c8312b",u:"#c8312b"},{n:"Gelb",f:"#e2a418",u:"#a56a00"},{n:"Lila",f:"#8e4bb8",u:"#8e4bb8"},{n:"Orange",f:"#e8742a",u:"#b4501a"},{n:"Türkis",f:"#1a9aa6",u:"#0e707a"},{n:"Rosa",f:"#d9558f",u:"#b23a70"}];
@@ -589,7 +599,7 @@ function outcome(e){
 function syncHistory(){
   var hs=loadHist();
   if(completedN()>=11){
-    var ent=makeEntry();ent.det=snapNow();
+    tmStop();var ent=makeEntry();ent.det=snapNow();ent.dur=tmElapsed();
     if(!S.hid){S.hid="g"+Date.now()+Math.floor(Math.random()*1000);save()}
     ent.id=S.hid;var k=-1;hs.forEach(function(e,i){if(e.id===S.hid)k=i});
     if(k>=0){ent.t=hs[k].t;hs[k]=ent}else hs.unshift(ent);
@@ -629,7 +639,7 @@ function renderResult(){
   function pair(i){return e.team?esc(e.names[i*2])+" &amp; "+esc(e.names[i*2+1]):""}
   function tile(cls,lbl,i){return '<div class="rt '+cls+'"><div class="rl">'+lbl+'</div><div class="rnm">'+esc(o.l[i])+'</div><div class="rp">'+fmt(o.v[i])+'</div>'+(e.team?'<div class="rs">'+pair(i)+'</div>':'')+'</div>'}
   $("r-tiles").innerHTML=tile("win","Gewinner",o.w)+tile("lose","Verlierer",o.x);
-  $("r-sub").textContent=LAB[V]+(e.team?" · mit Partner":" · jeder für sich")+" · "+(e.low?"wenigste Punkte gewinnt":"meiste Punkte gewinnt");
+  $("r-sub").textContent=LAB[V]+(e.team?" · mit Partner":" · jeder für sich")+" · "+(e.low?"wenigste Punkte gewinnt":"meiste Punkte gewinnt")+(tmElapsed()>0?" · Dauer "+tmFmt(tmElapsed()):"");
   var order=o.v.map(function(_,i){return i}).sort(function(a,b){return e.low?o.v[a]-o.v[b]:o.v[b]-o.v[a]});
   var mn=Math.min.apply(null,o.v),mx=Math.max.apply(null,o.v),h="";
   order.forEach(function(i,pos){
@@ -640,7 +650,7 @@ function renderResult(){
   $("r-chart").innerHTML=chartHTML();
 }
 function openResult(){S.shown=true;save();renderResult();show("result")}
-function newGame(){S.rounds=fresh();S.mult=[];S.col=[];S.cift=[];S.fach=[];S.hid=null;S.shown=false;S.dealer=null;save();rows();show("game");totals();dealerUI()}
+function newGame(){S.rounds=fresh();S.mult=[];S.col=[];S.cift=[];S.fach=[];S.hid=null;S.shown=false;S.dealer=null;S.timer={ms:0,start:null};save();rows();show("game");totals();dealerUI();tmUI()}
 function renderHistory(){
   var hs=loadHist(),h="";
   if(!hs.length){h='<p class="hint">Noch keine beendeten Spiele. Sobald Runde 11 abgeschlossen ist, erscheint das Spiel hier.</p>'}
@@ -651,7 +661,7 @@ function renderHistory(){
     h+='<h2 class="sh">Bilanz</h2><div class="bil">'+nm.map(function(n){return '<span>'+esc(n)+': '+bil[n].w+' Siege · '+bil[n].l+' Niederlagen</span>'}).join("")+'</div><h2 class="sh">Spiele</h2>';
     hs.forEach(function(e){
       var o=outcome(e),d=new Date(e.t),ds=d.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})+" · "+d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"});
-      h+='<div class="hi"><div class="hd"><span>'+ds+'</span><span>'+(LAB[e.mode]||"")+(e.team||e.ptm?" · Partner":"")+'</span></div>'+
+      h+='<div class="hi"><div class="hd"><span>'+ds+'</span><span>'+(LAB[e.mode]||"")+(e.team||e.ptm?" · Partner":"")+(e.dur?" · "+tmFmt(e.dur):"")+'</span></div>'+
         '<div class="hw">Gewinner: <b>'+esc(o.l[o.w])+'</b> ('+fmt(o.v[o.w])+')<br>Verlierer: <b>'+esc(o.l[o.x])+'</b> ('+fmt(o.v[o.x])+')</div>'+
         '<div class="hs">'+o.l.map(function(n,i){return esc(n)+' '+fmt(o.v[i])}).join(" · ")+'</div>'+(e.det?'<button class="hb" data-id="'+e.id+'">Spielverlauf ansehen</button>':'')+'</div>';
     });
@@ -792,7 +802,7 @@ function pdTeamUI(){
 function pdSync(c){
   var hs=loadHist();
   if(c.over){
-    var ent={t:Date.now(),mode:"pd",team:false,ptm:S.team,low:false,names:S.team?S.tn.slice(0,2):S.names.slice(),tn:["",""],sums:c.rem.map(fmt),cift:[0,0,0,0]};ent.det=snapNow();
+    var ent={t:Date.now(),mode:"pd",team:false,ptm:S.team,low:false,names:S.team?S.tn.slice(0,2):S.names.slice(),tn:["",""],sums:c.rem.map(fmt),cift:[0,0,0,0]};tmStop();ent.det=snapNow();ent.dur=tmElapsed();
     if(!S.hid){S.hid="g"+Date.now()+Math.floor(Math.random()*1000);save()}
     ent.id=S.hid;var k=-1;hs.forEach(function(e,i){if(e.id===S.hid)k=i});
     if(k>=0){ent.t=hs[k].t;hs[k]=ent}else hs.unshift(ent);
@@ -812,7 +822,7 @@ function renderResultPd(){
   var c=pdCalc(),rem=c.rem,n=c.ne,lab=pdLab(),best=Math.max.apply(null,rem),worst=Math.min.apply(null,rem),w=rem.indexOf(best),x=rem.indexOf(worst);
   function tile(cls,l,i){return '<div class="rt '+cls+'"><div class="rl">'+l+'</div><div class="rnm">'+esc(lab[i])+'</div><div class="rp">'+Math.max(0,fmt(rem[i]))+'</div>'+(S.team?'<div class="rs">'+esc(S.names[i*2])+' &amp; '+esc(S.names[i*2+1])+'</div>':'')+'</div>'}
   $("r-tiles").innerHTML=tile("win","Gewinner",w)+tile("lose","Verlierer",x);
-  $("r-sub").textContent="Puan düşme"+(S.team?" · mit Partner":"")+" · beendet in Runde "+c.n;
+  $("r-sub").textContent="Puan düşme"+(S.team?" · mit Partner":"")+" · beendet in Runde "+c.n+(tmElapsed()>0?" · Dauer "+tmFmt(tmElapsed()):"");
   var order=[];for(var k=0;k<n;k++)order.push(k);order.sort(function(a,b){return rem[b]-rem[a]});
   var h="",cl=S.team?"t":"p";
   order.forEach(function(i,pos){
@@ -823,10 +833,10 @@ function renderResultPd(){
   $("r-chart").innerHTML=lineChart(c.ser,pdCols(n),lab,c.n);
 }
 function pdOpenResult(){S.shown=true;save();renderResultPd();show("result")}
-function pdNew(){S.rounds=[{w:null,t:null}];S.hid=null;S.shown=false;S.dealer=null;save();pdRows();show("pdgame");pdUI();pdDealerUI()}
+function pdNew(){S.rounds=[{w:null,t:null}];S.hid=null;S.shown=false;S.dealer=null;S.timer={ms:0,start:null};save();pdRows();show("pdgame");pdUI();pdDealerUI();tmUI()}
 function enterPd(){
   V="pd";KEY=KEYS.pd;S=pdLoad();
-  pdNames();pdRows();pdTeamUI();pdDealerUI();pdEnsure();
+  pdNames();pdRows();pdTeamUI();pdDealerUI();pdEnsure();tmUI();tmResume();
   show("pdgame");
   try{if(location.hash!=="#pd")location.hash="pd"}catch(e){}
 }
@@ -844,7 +854,7 @@ var pdrb=$("pd-reset"),pdt;
 pdrb.onclick=function(){
   if(!pdrb.classList.contains("armed")){pdrb.classList.add("armed");pdrb.textContent="Wirklich?";pdt=setTimeout(function(){pdrb.classList.remove("armed");pdrb.textContent="Zurücksetzen"},3000);return}
   clearTimeout(pdt);pdrb.classList.remove("armed");pdrb.textContent="Zurücksetzen";
-  S.rounds=[{w:null,t:null}];S.hid=null;S.shown=false;S.dealer=null;save();pdRows();pdUI();pdDealerUI();
+  S.rounds=[{w:null,t:null}];S.hid=null;S.shown=false;S.dealer=null;S.timer={ms:0,start:null};save();pdRows();pdUI();pdDealerUI();tmUI();
 };
 $("pdvd").addEventListener("toggle",pdChartUI);
 
@@ -883,7 +893,7 @@ function trailPd(){
 function pdChartHTML(){var c=pdCalc();return c.n<1?'<p class="hint" style="margin:6px 2px">Noch keine abgeschlossene Runde.</p>':lineChart(c.ser,pdCols(c.ne),pdLab(),c.n)}
 function openTrail(det,from){
   vBack=from;
-  $("v-sub").textContent=LAB[det.mode]+(det.s.team?" · mit Partner":"");
+  $("v-sub").textContent=LAB[det.mode]+(det.s.team?" · mit Partner":"")+(det.s.timer&&det.s.timer.ms>0?" · Dauer "+tmFmt(det.s.timer.ms):"");
   $("v-chart").innerHTML=withSnap(det,function(){return det.mode==="pd"?pdChartHTML():chartHTML()});
   $("v-table").innerHTML=withSnap(det,function(){return det.mode==="pd"?trailPd():trailNormal()});
   show("verlauf");
@@ -906,6 +916,36 @@ function dealerBind(el,after){
 function dealerUI(){var el=$("dealer");el.innerHTML=dealerPanel();dealerBind(el,function(){rows();totals();dealerUI()})}
 function pdDealerUI(){var el=$("pddealer");el.innerHTML=dealerPanel();dealerBind(el,function(){pdRows();pdUI();pdDealerUI()})}
 function dealerPill(r){return S.dealer==null?"":'<span class="dpill2">Verteiler: '+esc(S.names[(S.dealer+r)%4])+'</span>'}
+
+var tmIv=null;
+function tmGet(){if(!S.timer)S.timer={ms:0,start:null};return S.timer}
+function tmElapsed(){var t=S.timer||{ms:0,start:null};return (t.ms||0)+(t.start?Date.now()-t.start:0)}
+function tmFmt(ms){var s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor(s%3600/60),c=s%60;function p(n){return n<10?"0"+n:""+n}return h?h+":"+p(m)+":"+p(c):p(m)+":"+p(c)}
+function tmUI(){
+  if(!S||!V)return;
+  var p=V==="pd"?"pdtm":"tm",t=S.timer||{ms:0,start:null},run=!!t.start,el=$(p+"-time");
+  if(!el)return;
+  el.textContent=tmFmt(tmElapsed());
+  var go=$(p+"-go");go.textContent=run?"Stopp":(t.ms>0?"Weiter":"Start");go.classList.toggle("run",run);
+  $(p+"-rs").hidden=run||!(t.ms>0);
+}
+function tmTick(){
+  if(tmIv)return;
+  tmIv=setInterval(function(){if(V&&S&&S.timer&&S.timer.start)tmUI();else{clearInterval(tmIv);tmIv=null}},1000);
+}
+function tmResume(){if(S&&S.timer&&S.timer.start)tmTick()}
+function tmStart(){var t=tmGet();if(!t.start){t.start=Date.now();save();tmUI();tmTick()}}
+function tmStop(){var t=tmGet();if(t.start){t.ms+=Date.now()-t.start;t.start=null;save();tmUI()}}
+function tmToggle(){if(S.timer&&S.timer.start)tmStop();else tmStart()}
+function tmResetBtn(id){
+  var b=$(id),to;
+  b.onclick=function(){
+    if(!b.classList.contains("armed")){b.classList.add("armed");b.textContent="Wirklich?";to=setTimeout(function(){b.classList.remove("armed");b.textContent="Zurücksetzen"},3000);return}
+    clearTimeout(to);b.classList.remove("armed");b.textContent="Zurücksetzen";S.timer={ms:0,start:null};save();tmUI();
+  };
+}
+$("tm-go").onclick=tmToggle;$("pdtm-go").onclick=tmToggle;
+tmResetBtn("tm-rs");tmResetBtn("pdtm-rs");
 window.addEventListener("hashchange",route);route();
 if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}
 </script>
